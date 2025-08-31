@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 username: currentUser.username,
                 role,
                 isEmailVerified: attributes.email_verified === "true",
-                mfaEnabled: false, // You can implement MFA status check here
+                mfaEnabled: false,
                 createdAt: "",
                 updatedAt: "",
             };

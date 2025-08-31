@@ -133,17 +133,19 @@ bun dev
 Great! You've successfully completed the AWS Cognito setup. Here are your configuration details:
 
 ### **Cognito Configuration Details:**
-- **User Pool ID**: `us-east-1_vPj8LyrMQ`
-- **Web Client ID**: `30oqphrp2854vfknmk6hr1hjkh`
-- **Region**: `us-east-1`
-- **Cognito Domain**: `https://us-east-1vpj8lyrmq.auth.us-east-1.amazoncognito.com`
-- **Admin Group**: ✅ Created successfully
+
+-   **User Pool ID**: `us-east-1_vPj8LyrMQ`
+-   **Web Client ID**: `30oqphrp2854vfknmk6hr1hjkh`
+-   **Region**: `us-east-1`
+-   **Cognito Domain**: `https://us-east-1vpj8lyrmq.auth.us-east-1.amazoncognito.com`
+-   **Admin Group**: ✅ Created successfully
 
 ### **Steps Completed:**
-- ✅ **Step 1**: Amazon Cognito application and user pool created
-- ✅ **Step 2**: MFA and account recovery configured
-- ✅ **Step 3**: Authentication methods verified
-- ✅ **Step 4**: Admin user group created
+
+-   ✅ **Step 1**: Amazon Cognito application and user pool created
+-   ✅ **Step 2**: MFA and account recovery configured
+-   ✅ **Step 3**: Authentication methods verified
+-   ✅ **Step 4**: Admin user group created
 
 ### **How to Assign Admin Role:**
 
@@ -151,26 +153,29 @@ Great! You've successfully completed the AWS Cognito setup. Here are your config
 2. **Users tab** → Find the user you want to make admin
 3. **Groups tab** → Add user to "admin" group
 4. **Alternative method** - Edit user attributes:
-   - Go to user details
-   - Edit attributes
-   - Add custom attribute: `custom:role` = `admin`
+    - Go to user details
+    - Edit attributes
+    - Add custom attribute: `custom:role` = `admin`
 
 ### **Test Your Authentication:**
 
 1. **Run the development server**:
-   ```bash
-   npm run dev
-   ```
+
+    ```bash
+    npm run dev
+    ```
 
 2. **Open** [http://localhost:3000](http://localhost:3000)
 
 3. **Test the flows**:
-   - Sign up a new user → Email verification → Sign in
-   - Test password reset functionality
-   - Create an admin user and test admin features
+    - Sign up a new user → Email verification → Sign in
+    - Test password reset functionality
+    - Create an admin user and test admin features
 
 ### **Environment Variables (Already Configured):**
+
 Your `.env.local` file is configured with:
+
 ```bash
 NEXT_PUBLIC_AWS_REGION=us-east-1
 NEXT_PUBLIC_USER_POOL_ID=us-east-1_vPj8LyrMQ
@@ -182,11 +187,11 @@ NEXT_PUBLIC_USER_POOL_WEB_CLIENT_ID=30oqphrp2854vfknmk6hr1hjkh
 1. **Push your code** to GitHub (✅ Already done)
 2. **Go to** [Vercel.com](https://vercel.com) and import your repository
 3. **Add Environment Variables** in Vercel project settings:
-   ```bash
-   NEXT_PUBLIC_AWS_REGION=us-east-1
-   NEXT_PUBLIC_USER_POOL_ID=us-east-1_vPj8LyrMQ
-   NEXT_PUBLIC_USER_POOL_WEB_CLIENT_ID=30oqphrp2854vfknmk6hr1hjkh
-   ```
+    ```bash
+    NEXT_PUBLIC_AWS_REGION=us-east-1
+    NEXT_PUBLIC_USER_POOL_ID=us-east-1_vPj8LyrMQ
+    NEXT_PUBLIC_USER_POOL_WEB_CLIENT_ID=30oqphrp2854vfknmk6hr1hjkh
+    ```
 4. **Deploy** - Your app will be live!
 
 ## Learn More
