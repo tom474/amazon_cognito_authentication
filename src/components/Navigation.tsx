@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
@@ -30,9 +31,40 @@ import {
 import { hasPermission } from "@/types/auth";
 
 export default function Navigation() {
-    const { user, isAuthenticated, signOutUser } = useAuth();
+    const { user, isAuthenticated, signOutUser, isLoading } = useAuth();
     const { itemCount } = useCart();
+    const router = useRouter();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    // Ensure component is mounted and handle auth state changes
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Debug: Log auth state
+    console.log("Navigation - Auth state:", {
+        user: user?.name || user?.email,
+        role: user?.role,
+        isAuthenticated,
+        isLoading,
+    });
+
+    // Don't render until mounted to prevent hydration issues
+    if (!mounted) return null;
+
+    // Show loading state while auth is being checked
+    if (isLoading) {
+        return (
+            <nav className="border-b">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between h-16 items-center">
+                        <div className="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
+                    </div>
+                </div>
+            </nav>
+        );
+    }
 
     const userRole = user?.role || "public";
 
@@ -47,6 +79,8 @@ export default function Navigation() {
     const handleSignOut = async () => {
         try {
             await signOutUser();
+            // Navigate to homepage after successful sign out
+            router.push("/");
         } catch (error) {
             console.error("Sign out error:", error);
         }
@@ -109,13 +143,19 @@ export default function Navigation() {
                                     <Button variant="ghost" size="sm">
                                         <Avatar className="h-6 w-6">
                                             <AvatarFallback className="text-xs">
-                                                {user?.username
+                                                {(
+                                                    user?.name ||
+                                                    user?.email ||
+                                                    user?.username
+                                                )
                                                     ?.charAt(0)
                                                     .toUpperCase() || "U"}
                                             </AvatarFallback>
                                         </Avatar>
                                         <span className="ml-2 hidden sm:block">
-                                            {user?.username}
+                                            {user?.name ||
+                                                user?.email ||
+                                                user?.username}
                                         </span>
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -241,6 +281,20 @@ export default function Navigation() {
                     </div>
                 </div>
             </div>
+
+            {/* Welcome Banner */}
+            {isAuthenticated && user && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="py-2 flex items-center justify-center">
+                            <span className="text-blue-800 font-medium text-sm">
+                                Welcome back,{" "}
+                                {user.name || user.email || "User"}! 👋
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
         </nav>
     );
 }

@@ -4,6 +4,10 @@ export interface User {
     id: string;
     email: string;
     username: string;
+    name?: string; // Full name or given_name + family_name
+    givenName?: string; // First name
+    familyName?: string; // Last name
+    phoneNumber?: string; // Phone number
     role: UserRole;
     isEmailVerified: boolean;
     mfaEnabled: boolean;

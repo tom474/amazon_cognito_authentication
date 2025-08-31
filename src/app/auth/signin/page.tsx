@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Navigation from "@/components/Navigation";
+import MFAForm from "@/components/auth/MFAForm";
+import TOTPSetup from "@/components/auth/TOTPSetup";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -26,8 +28,15 @@ export default function SignInPage() {
     });
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [showMFA, setShowMFA] = useState(false);
+    const [showTOTPSetup, setShowTOTPSetup] = useState(false);
+    const [mfaType, setMfaType] = useState<"SMS" | "TOTP" | "EMAIL">("SMS");
+    const [totpSetupData, setTotpSetupData] = useState<{
+        qrCodeUri?: string;
+        sharedSecret?: string;
+    }>({});
 
-    const { signIn } = useAuth();
+    const { signIn, setupTOTP } = useAuth();
     const router = useRouter();
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,9 +56,77 @@ export default function SignInPage() {
 
         setIsLoading(true);
         try {
-            await signIn(formData.email, formData.password);
+            const result = await signIn(formData.email, formData.password);
+
+            // Check if MFA is required
+            if (result.nextStep) {
+                console.log("MFA required:", result.nextStep);
+
+                // Determine MFA type from the nextStep
+                const nextStep = result.nextStep as {
+                    signInStep?: string;
+                    totpSetupDetails?: {
+                        getSetupUri: (
+                            appName: string,
+                            userEmail: string
+                        ) => URL;
+                    };
+                };
+
+                // Check if TOTP setup is required
+                if (
+                    nextStep.signInStep === "CONTINUE_SIGN_IN_WITH_TOTP_SETUP"
+                ) {
+                    console.log("TOTP setup required:", nextStep);
+                    try {
+                        // Use the totpSetupDetails from the nextStep
+                        const setupData = await setupTOTP(
+                            nextStep.totpSetupDetails
+                        );
+                        setTotpSetupData(setupData);
+                        setShowTOTPSetup(true);
+                        toast.info(
+                            "Please set up your authenticator app to continue"
+                        );
+                        return;
+                    } catch (setupError) {
+                        console.error("TOTP setup failed:", setupError);
+                        toast.error("Failed to initiate TOTP setup");
+                        return;
+                    }
+                }
+
+                // Handle TOTP verification - always show QR code interface
+                if (nextStep.signInStep === "CONFIRM_SIGN_IN_WITH_TOTP_CODE") {
+                    setMfaType("TOTP");
+                    setShowTOTPSetup(true);
+                    // For existing TOTP users, generate a reference QR (not a new secret)
+                    setTotpSetupData({
+                        qrCodeUri: "", // Empty QR - component will generate reference QR
+                        sharedSecret: "", // No secret for existing users
+                    });
+                    toast.info("Use your authenticator app to sign in");
+                    return;
+                }
+
+                setShowMFA(true);
+                if (nextStep.signInStep === "CONFIRM_SIGN_IN_WITH_SMS_CODE") {
+                    setMfaType("SMS");
+                } else if (
+                    nextStep.signInStep === "CONFIRM_SIGN_IN_WITH_EMAIL_CODE"
+                ) {
+                    setMfaType("EMAIL");
+                } else {
+                    setMfaType("EMAIL"); // Default to EMAIL instead of SMS
+                }
+
+                toast.info("Please enter your MFA code to complete sign in");
+                return;
+            }
+
+            // Sign in completed without MFA
             toast.success("Welcome back!");
-            router.push("/");
+            router.push("/products");
         } catch (error) {
             console.error("Sign in error:", error);
 
@@ -76,6 +153,64 @@ export default function SignInPage() {
             setIsLoading(false);
         }
     };
+
+    const handleMFASuccess = () => {
+        toast.success("Welcome back!");
+        setShowMFA(false);
+        router.push("/products");
+    };
+
+    const handleMFACancel = () => {
+        setShowMFA(false);
+        setFormData({ email: "", password: "" });
+        toast.info("Sign in cancelled. Please try again.");
+    };
+
+    const handleTOTPSetupSuccess = () => {
+        toast.success("Authenticator setup complete! Welcome!");
+        setShowTOTPSetup(false);
+        router.push("/products");
+    };
+
+    const handleTOTPSetupCancel = () => {
+        setShowTOTPSetup(false);
+        setFormData({ email: "", password: "" });
+        toast.info("Authenticator setup cancelled. Please sign in again.");
+    };
+
+    // If TOTP setup is required, show the TOTP setup form
+    if (showTOTPSetup) {
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <Navigation />
+                <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+                    <TOTPSetup
+                        qrCodeUri={totpSetupData.qrCodeUri}
+                        sharedSecret={totpSetupData.sharedSecret}
+                        onSuccess={handleTOTPSetupSuccess}
+                        onCancel={handleTOTPSetupCancel}
+                        duringSignIn={true}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    // If MFA is required, show the MFA form
+    if (showMFA) {
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <Navigation />
+                <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+                    <MFAForm
+                        mfaType={mfaType}
+                        onSuccess={handleMFASuccess}
+                        onCancel={handleMFACancel}
+                    />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50">

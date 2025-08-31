@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react";
 
 export default function ResetPasswordPage() {
     const [step, setStep] = useState<"request" | "confirm">("request");
@@ -30,9 +30,22 @@ export default function ResetPasswordPage() {
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [rateLimitHit, setRateLimitHit] = useState(false);
 
     const { resetPassword, confirmResetPassword } = useAuth();
     const router = useRouter();
+
+    // Auto-reset rate limit flag after 10 minutes
+    useEffect(() => {
+        if (rateLimitHit) {
+            const timer = setTimeout(() => {
+                setRateLimitHit(false);
+                toast.info("You may now try resetting your password again.");
+            }, 10 * 60 * 1000); // 10 minutes
+
+            return () => clearTimeout(timer);
+        }
+    }, [rateLimitHit]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -56,11 +69,30 @@ export default function ResetPasswordPage() {
             setStep("confirm");
         } catch (error) {
             console.error("Reset password error:", error);
-            toast.error(
-                error instanceof Error
-                    ? error.message
-                    : "Failed to send reset code"
-            );
+
+            // Handle specific AWS Cognito errors
+            if (error instanceof Error) {
+                if (
+                    error.message.includes("LimitExceededException") ||
+                    error.message.includes("Attempt limit exceeded")
+                ) {
+                    setRateLimitHit(true);
+                    toast.error(
+                        "Too many password reset attempts. Please wait 5-10 minutes before trying again.",
+                        { duration: 8000 } // Show longer for important info
+                    );
+                } else if (error.message.includes("UserNotFoundException")) {
+                    toast.error("No account found with this email address.");
+                } else if (
+                    error.message.includes("InvalidParameterException")
+                ) {
+                    toast.error("Invalid email address format.");
+                } else {
+                    toast.error(error.message);
+                }
+            } else {
+                toast.error("Failed to send reset code. Please try again.");
+            }
         } finally {
             setIsLoading(false);
         }
@@ -116,6 +148,7 @@ export default function ResetPasswordPage() {
                 formData.code,
                 formData.newPassword
             );
+
             toast.success(
                 "Password reset successful! You can now sign in with your new password."
             );
@@ -289,10 +322,27 @@ export default function ResetPasswordPage() {
                         <CardDescription>
                             Enter your email address and we&apos;ll send you a
                             reset code
+                            <br />
+                            <span className="text-xs text-gray-500 mt-1 block">
+                                Note: To prevent abuse, there&apos;s a limit on
+                                reset attempts. Please wait if you see a limit
+                                exceeded error.
+                            </span>
                         </CardDescription>
                     </CardHeader>
                     <form onSubmit={handleRequestReset}>
                         <CardContent className="space-y-4">
+                            {rateLimitHit && (
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm text-yellow-800">
+                                    <div className="flex items-center">
+                                        <AlertCircle className="h-4 w-4 mr-2" />
+                                        <span>
+                                            Rate limit reached. Please wait 5-10
+                                            minutes before attempting again.
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email</Label>
                                 <Input
@@ -310,10 +360,12 @@ export default function ResetPasswordPage() {
                             <Button
                                 type="submit"
                                 className="w-full"
-                                disabled={isLoading}
+                                disabled={isLoading || rateLimitHit}
                             >
                                 {isLoading
                                     ? "Sending Reset Code..."
+                                    : rateLimitHit
+                                    ? "Please Wait (Rate Limited)"
                                     : "Send Reset Code"}
                             </Button>
                             <div className="text-center text-sm text-gray-600">

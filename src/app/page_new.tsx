@@ -131,7 +131,8 @@ export default function Home() {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="bg-white p-6 rounded-lg shadow-sm border">
                             <h2 className="text-lg font-semibold mb-2">
-                                Welcome back, {user.username}!
+                                Welcome back,{" "}
+                                {user.name || user.email || "User"}!
                             </h2>
                             <div className="flex items-center space-x-4">
                                 <Badge

@@ -86,7 +86,9 @@ export default function ProfilePage() {
                                 <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <User className="h-10 w-10 text-blue-600" />
                                 </div>
-                                <CardTitle>{user.username}</CardTitle>
+                                <CardTitle>
+                                    {user.name || user.email || "User"}
+                                </CardTitle>
                                 <CardDescription>{user.email}</CardDescription>
                                 <Badge
                                     variant={getRoleBadgeVariant(user.role)}
@@ -151,18 +153,6 @@ export default function ProfilePage() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="username">
-                                            Username
-                                        </Label>
-                                        <Input
-                                            id="username"
-                                            type="text"
-                                            defaultValue={user.username}
-                                            readOnly
-                                            className="bg-gray-50"
-                                        />
-                                    </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="email">Email</Label>
                                         <Input

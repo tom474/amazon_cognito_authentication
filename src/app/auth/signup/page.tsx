@@ -23,6 +23,7 @@ export default function SignUpPage() {
     const [formData, setFormData] = useState({
         email: "",
         username: "",
+        phone: "",
         password: "",
         confirmPassword: "",
     });
@@ -46,10 +47,19 @@ export default function SignUpPage() {
         if (
             !formData.email ||
             !formData.username ||
+            !formData.phone ||
             !formData.password ||
             !formData.confirmPassword
         ) {
             toast.error("All fields are required");
+            return false;
+        }
+
+        // Validate phone number format (must start with +)
+        if (!formData.phone.startsWith("+")) {
+            toast.error(
+                "Phone number must include country code (e.g., +1234567890)"
+            );
             return false;
         }
 
@@ -88,7 +98,12 @@ export default function SignUpPage() {
 
         setIsLoading(true);
         try {
-            await signUp(formData.email, formData.password, formData.username);
+            await signUp(
+                formData.email,
+                formData.password,
+                formData.username,
+                formData.phone
+            );
             setNeedsVerification(true);
             toast.success(
                 "Account created! Please check your email for verification code."
@@ -248,6 +263,21 @@ export default function SignUpPage() {
                                     onChange={handleInputChange}
                                     required
                                 />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone Number</Label>
+                                <Input
+                                    id="phone"
+                                    name="phone"
+                                    type="tel"
+                                    placeholder="+1234567890"
+                                    value={formData.phone}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Include country code (e.g., +1 for US)
+                                </p>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="password">Password</Label>
