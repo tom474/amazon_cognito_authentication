@@ -138,7 +138,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     const checkAuthState = useCallback(async (preserveExistingAuth = false) => {
-
         try {
             const currentUser = await getCurrentUser();
 
