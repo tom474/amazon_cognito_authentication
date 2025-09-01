@@ -42,14 +42,6 @@ export default function Navigation() {
         setMounted(true);
     }, []);
 
-    // Debug: Log auth state
-    console.log("Navigation - Auth state:", {
-        user: user?.name || user?.email,
-        role: user?.role,
-        isAuthenticated,
-        isLoading,
-    });
-
     // Don't render until mounted to prevent hydration issues
     if (!mounted) return null;
 

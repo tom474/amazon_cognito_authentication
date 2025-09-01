@@ -164,7 +164,7 @@ export const MFAForm: React.FC<MFAFormProps> = ({
                                 className="text-primary hover:underline"
                                 onClick={() => {
                                     // In a real implementation, you'd call a resend function
-                                    console.log("Resend MFA code requested");
+                                    // For now, this is just a placeholder
                                 }}
                                 disabled={isLoading}
                             >

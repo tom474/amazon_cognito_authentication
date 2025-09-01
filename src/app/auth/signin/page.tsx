@@ -60,8 +60,6 @@ export default function SignInPage() {
 
             // Check if MFA is required
             if (result.nextStep) {
-                console.log("MFA required:", result.nextStep);
-
                 // Determine MFA type from the nextStep
                 const nextStep = result.nextStep as {
                     signInStep?: string;
@@ -77,7 +75,6 @@ export default function SignInPage() {
                 if (
                     nextStep.signInStep === "CONTINUE_SIGN_IN_WITH_TOTP_SETUP"
                 ) {
-                    console.log("TOTP setup required:", nextStep);
                     try {
                         // Use the totpSetupDetails from the nextStep
                         const setupData = await setupTOTP(

@@ -56,7 +56,6 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     children,
 }) => {
-    console.log("AuthProvider component rendering...");
 
     const [authState, setAuthState] = useState<AuthState>({
         user: null,
@@ -130,28 +129,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             // or check the user pool configuration. For now, let's assume MFA is enabled
             // if the User Pool has MFA configured (which yours does based on the testing guide)
 
-            console.log("Checking MFA status...");
             // Since MFA is configured at the Cognito level, we'll return true
             // In a production environment, you'd query the user's MFA setup status
             return true; // MFA is available/enabled in your Cognito setup
         } catch (error) {
-            console.log("Could not fetch MFA status:", error);
             return false;
         }
     };
 
     const checkAuthState = useCallback(async (preserveExistingAuth = false) => {
-        console.log(
-            "Checking auth state...",
-            preserveExistingAuth ? "(preserving existing auth)" : ""
-        );
 
         try {
             const currentUser = await getCurrentUser();
-            console.log("getCurrentUser successful:", currentUser.username);
 
             const attributes = await fetchUserAttributes();
-            console.log("fetchUserAttributes successful");
 
             // Check user groups for role assignment
             let role: UserRole = "user";
@@ -166,16 +157,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                     (session.tokens?.accessToken?.payload?.[
                         "cognito:groups"
                     ] as string[]) || [];
-                console.log("User groups:", groups);
 
                 if (groups.includes("admin")) {
                     role = "admin";
                 }
             } catch (groupError) {
-                console.log(
-                    "Could not fetch user groups, defaulting to 'user' role:",
-                    groupError
-                );
             }
 
             const user: User = {
@@ -204,23 +190,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 isAuthenticated: true,
                 isLoading: false,
             });
-            console.log("Auth state set:", {
-                user: user.username,
-                role: user.role,
-                isAuthenticated: true,
-            });
         } catch (error) {
             // Handle the specific case where user is not authenticated
             if (
                 error instanceof Error &&
                 error.name === "UserUnAuthenticatedException"
             ) {
-                console.log("User not authenticated");
                 if (preserveExistingAuth) {
-                    console.log("Preserving existing auth state due to flag");
                     return; // Don't override existing auth state
                 }
-                console.log("Setting unauthenticated state");
             } else {
                 console.error("Auth check error:", error);
             }
@@ -232,28 +210,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                     isAuthenticated: false,
                     isLoading: false,
                 });
-                console.log("Auth state set to unauthenticated");
             }
         }
     }, []); // Empty dependencies since it doesn't depend on any state/props
 
     useEffect(() => {
-        console.log("✅ useEffect is working!");
 
         // Listen to auth events using Amplify Hub
         const hubListener = (data: {
             payload: { event: string; data?: unknown };
         }) => {
             const { event, data: eventData } = data.payload;
-            console.log("Auth event received:", event, eventData);
 
             switch (event) {
                 case "signIn":
-                    console.log("User signed in successfully via Hub");
                     // Don't call checkAuthState here - let the signIn function handle it
                     break;
                 case "signOut":
-                    console.log("User signed out");
                     setAuthState({
                         user: null,
                         isAuthenticated: false,
@@ -261,7 +234,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                     });
                     break;
                 case "signIn_failure":
-                    console.log("Sign in failed:", eventData);
                     setAuthState({
                         user: null,
                         isAuthenticated: false,
@@ -276,7 +248,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // Initial auth state check
         checkAuthState().catch((error) => {
-            console.log("Initial auth state check failed:", error);
         });
 
         // Cleanup
@@ -289,7 +260,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
             const { signIn } = await import("aws-amplify/auth");
             const signInResult = await signIn({ username: email, password });
-            console.log("Sign in result:", signInResult);
 
             // Store the sign-in session for MFA confirmation
             updateCurrentSignInSession(signInResult);
@@ -299,7 +269,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 signInResult.nextStep?.signInStep ===
                 "CONTINUE_SIGN_IN_WITH_TOTP_SETUP"
             ) {
-                console.log("TOTP setup required:", signInResult.nextStep);
                 updateTotpSetupRequired(true);
                 return { nextStep: signInResult.nextStep };
             }
@@ -315,13 +284,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 signInResult.nextStep?.signInStep ===
                     "CONFIRM_SIGN_IN_WITH_EMAIL_CODE"
             ) {
-                console.log("MFA required:", signInResult.nextStep);
                 updateMfaRequired(true);
                 return { nextStep: signInResult.nextStep };
             }
 
             // Sign in completed without MFA
-            console.log("Sign in successful without MFA:", signInResult);
 
             // Manually set auth state with basic user info
             // We'll get full user details later when the session is established
@@ -343,19 +310,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             });
             updateMfaRequired(false);
 
-            console.log("Basic auth state set, will fetch full details later");
 
             // Schedule a delayed check to get full user details and role
             // But don't override the basic auth state if it fails
             setTimeout(async () => {
                 try {
-                    console.log("Starting delayed auth state check...");
                     await checkAuthState(true); // Preserve existing auth if it fails
                 } catch (error) {
-                    console.log(
-                        "Delayed auth state check failed, keeping basic state:",
-                        error
-                    );
                     // Keep the basic auth state we already set
                 }
             }, 3000); // Increased delay to 3 seconds
@@ -385,7 +346,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             const confirmSignInResult = await confirmSignIn({
                 challengeResponse: code,
             });
-            console.log("MFA confirmation result:", confirmSignInResult);
 
             // Clear the stored session since MFA is complete
             updateCurrentSignInSession(null);
@@ -416,10 +376,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 try {
                     await checkAuthState(true);
                 } catch (error) {
-                    console.log(
-                        "Failed to update user details after MFA:",
-                        error
-                    );
                 }
             }, 1000);
         } catch (error) {
@@ -436,10 +392,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
             // If totpSetupDetails are provided from signIn nextStep, use those
             if (totpSetupDetails) {
-                console.log(
-                    "Using TOTP setup details from sign-in flow:",
-                    totpSetupDetails
-                );
 
                 // Generate QR code URI for the user
                 const appName = "TechStore";
@@ -466,7 +418,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 // Fallback to setUpTOTP for standalone setup
                 const { setUpTOTP } = await import("aws-amplify/auth");
                 const totpSetupDetails = await setUpTOTP();
-                console.log("TOTP setup initiated:", totpSetupDetails);
 
                 // Generate QR code URI for the user
                 const appName = "TechStore";
@@ -507,10 +458,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 const confirmSignInResult = await confirmSignIn({
                     challengeResponse: code,
                 });
-                console.log(
-                    "TOTP setup confirmed during sign-in:",
-                    confirmSignInResult
-                );
 
                 updateTotpSetupRequired(false);
 
@@ -540,24 +487,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                         try {
                             await checkAuthState(true); // Preserve existing auth if it fails
                         } catch (error) {
-                            console.log(
-                                "Delayed auth state check failed, keeping basic state:",
-                                error
-                            );
                         }
                     }, 1000);
                 } else {
                     // Handle additional steps if needed
-                    console.log(
-                        "Additional steps required after TOTP setup:",
-                        confirmSignInResult.nextStep
-                    );
                 }
             } else {
                 // Standalone TOTP setup, use verifyTOTPSetup
                 const { verifyTOTPSetup } = await import("aws-amplify/auth");
                 await verifyTOTPSetup({ code });
-                console.log("TOTP setup confirmed successfully");
 
                 updateTotpSetupRequired(false);
 
@@ -639,14 +577,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                     deliveryMethod: "EMAIL", // Force email delivery instead of SMS
                 },
             });
-            console.log("Reset password result:", resetResult);
 
             // Check if MFA is required for password reset
             if (
                 resetResult.nextStep?.resetPasswordStep ===
                 "CONFIRM_RESET_PASSWORD_WITH_CODE"
             ) {
-                console.log("Password reset code required");
                 return { nextStep: resetResult.nextStep };
             }
 
@@ -669,7 +605,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 confirmationCode: code,
                 newPassword,
             });
-            console.log("Password reset confirmed successfully");
             return { nextStep: undefined };
         } catch (error) {
             console.error("Confirm reset password error:", error);

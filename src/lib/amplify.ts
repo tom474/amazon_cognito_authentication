@@ -21,12 +21,6 @@ const amplifyConfig = {
     },
 };
 
-console.log("Configuring Amplify with:", {
-    userPoolId: amplifyConfig.Auth.Cognito.userPoolId,
-    userPoolClientId: amplifyConfig.Auth.Cognito.userPoolClientId,
-    region: amplifyConfig.Auth.Cognito.region,
-});
-
 Amplify.configure(amplifyConfig);
 
 export default amplifyConfig;
